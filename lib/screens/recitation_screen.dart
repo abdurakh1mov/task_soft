@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:task_soft/bloc/home_bloc.dart';
+import 'package:task_soft/components/animated_button.dart';
 import 'package:task_soft/components/custom_app_bar.dart';
 import 'package:task_soft/components/custom_button.dart';
 import 'package:task_soft/helper/helper.dart';
@@ -25,9 +26,11 @@ class _RecitationScreenState extends State<RecitationScreen>
   late PlayerController playerController;
   AnimationController? _controllerA;
   var squareScaleA = 0.95;
+  Timer? _timer;
   bool isRecording = false;
   bool isPlaying = false;
   int currentDuration = 0;
+
   @override
   void initState() {
     super.initState();
@@ -81,11 +84,17 @@ class _RecitationScreenState extends State<RecitationScreen>
       setState(() {
         isRecording = false;
       });
+      _timer?.cancel();
     } else {
       await recorderController.record();
-      setState(() {
-        isRecording = true;
+      currentDuration = 0;
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          currentDuration++;
+        });
       });
+      isRecording = true;
+      setState(() {});
     }
   }
 
@@ -190,22 +199,40 @@ class _RecitationScreenState extends State<RecitationScreen>
                         )
                       : SizedBox(),
                 ),
+                if (recordedFilePath == null)
+                  Column(
+                    children: [
+                      SizedBox(
+                        height: 12,
+                      ),
+                      Text(
+                        Helper().formatDuration(
+                          currentDuration,
+                        ),
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.black),
+                      ),
+                    ],
+                  ),
                 SizedBox(
-                  height: 8,
+                  height: 12,
                 ),
                 if (recordedFilePath == null)
-                  CustomButton(
-                      backgroundColor: ColorSet.reciteButtonColor,
-                      iconColor: Colors.white,
-                      height: 88,
-                      width: 88,
-                      icon: recorderController.isRecording
-                          ? Icons.stop_rounded
-                          : Icons.mic,
-                      title: "",
-                      onTap: () {
+                  SizedBox(
+                    height: 100,
+                    width: 100,
+                    child: PlayButton(
+                      pauseIcon: Icon(Icons.stop_rounded,
+                          color: Colors.white, size: 40),
+                      playIcon:
+                          Icon(Icons.play_arrow, color: Colors.white, size: 40),
+                      onPressed: () {
                         _toggleRecording();
-                      }),
+                      },
+                    ),
+                  ),
                 Expanded(child: SizedBox()),
                 if (recordedFilePath != null)
                   Container(
@@ -308,6 +335,7 @@ class _RecitationScreenState extends State<RecitationScreen>
                                 onTap: () {
                                   setState(() {
                                     recordedFilePath = null;
+                                    currentDuration = 0;
                                   });
                                 }),
                           ],
